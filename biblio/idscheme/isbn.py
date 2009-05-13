@@ -1,18 +1,126 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Assorted functions for working with ISBNs.
+A unified class for handling ISBNs.
+
 """
-# TODO: error-handling logic is correct?
 
 __docformat__ = 'restructuredtext en'
 
 
 ### IMPORTS ###
 
-### CONSTANTS & DEFINES ###
+import utils
+
+__all__ = [
+	'Isbn',
+]
+
+__version__ = '0.1b'
+
 
 ### IMPLEMENTATION ###
+
+class Isbn (object):
+	"""
+	An ISBN number.
+	
+	This encapsulates most of the utility functions, supporting initialisation
+	from any forms and interconversion. It can be set from an ISBN-13, ISBN-10
+	or SBN and will return
+	
+	For example::
+	
+		>>> y = Isbn ("978-0940-01673-6")
+		>>> y.isbn13
+		'9780940016736'
+		>>> y.isbn10
+		'0940016737'
+		>>> y.sbn
+		'940016737'
+		>>> y.asin
+		'0940016737'
+	
+	"""
+	def __init__ (self, isbn_str):
+		"""
+		Ctor, using a string representation of the ISBN.
+		
+		:Parameters:
+			isbn_str : string
+				A 10- or 13-digit form of the ISBN, or an old-style 9 digit SBN.
+				Formatting (whitespace and hyphens) is allowed and is stripped out
+				before use.
+				
+		For example::
+		
+				>>> x = Isbn ("3-8055-7505-X")
+				>>> y = Isbn ("9780940016736")
+				>>> z = Isbn ("940016737")
+				
+		"""
+		# Main:
+		clean_str = utils.clean_isbn (isbn_str)
+		isbn_len = len (clean_str)
+		if (isbn_len == 9):
+			self.sbn = clean_str
+		elif (isbn_len == 10):
+			self.isbn10 = clean_str
+		elif (isbn_len == 13):
+			self.isbn13 = clean_str
+		else:
+			raise ValueError ("ISBN '%s' should be 9, 10 or 13 characters" %
+				isbn_str)
+
+	def __str__ (self):
+		return "%s (%s)" % (self.__class__, self.isbn13)
+	
+	def __unicode__ (self):
+		return unicode (self)
+	
+	### INTERNAL:
+	def _get_isbn10 (self):
+		return self._isbn10
+
+	def _set_isbn10 (self, isbn_str):
+		isbn_str = utils.clean_isbn (isbn_str)
+		assert (len (isbn_str) == 10)
+		self._isbn10 = isbn_str
+		self._isbn13 = utils.isbn10_to_isbn13 (isbn_str)
+		self._sbn = utils.isbn10_to_sbn (isbn_str)
+	
+	def _get_isbn13 (self):
+		return self._isbn13
+	
+	def _set_isbn13 (self, isbn_str):
+		isbn_str = utils.clean_isbn (isbn_str)
+		assert (len (isbn_str) == 13)
+		self._isbn13 = isbn_str
+		self._isbn10 = utils.isbn13_to_isbn10 (isbn_str)
+		if (self._isbn10):
+			self._sbn = utils.isbn10_to_sbn (self._isbn10)
+		else:
+			self._sbn = None
+
+	def _get_sbn (self):
+		return self._sbn
+
+	def _set_sbn (self, sbn_str):
+		sbn_str = utils.clean_isbn (sbn_str)
+		assert (len (sbn_str) == 9)
+		self._sbn = sbn_str
+		self._isbn10 = utils.sbn_to_isbn10 (sbn_str)
+		self._isbn13 = utils.isbn10_to_isbn13 (self._isbn10)
+	
+	isbn10 = property (_get_isbn10, _set_isbn10)
+	isbn13 = property (_get_isbn13, _set_isbn13)
+	sbn = property (_get_sbn, _set_sbn)
+	asin = isbn10
+	ean = isbn10
+	
+	
+### UTILITY FXNS
+
 
 def clean_isbn (isbn_str):
 	"""
@@ -211,6 +319,39 @@ def sbn_to_isbn10 (sbn_str, cleanse=True):
 	return '0' + sbn_str
 
 
+
+def isbn13_checksum (isbn_str):
+	"""
+	Return the checksum over the coding (first 12 digits) of an ISBN-13.
+
+	:Parameters:
+		isbn_str : string
+			An ISBN-13 without the trailing checksum digit.
+
+	:Returns:
+		The checksum character, ``0`` to ``9``.
+
+	For example:
+
+		>>> isbn13_checksum ("978094001673")
+		'6'
+		>>> isbn13_checksum ("979123456789")
+		'6'
+
+	"""
+	## Preconditions & preparation:
+	assert (len (isbn_str) == 12), 'expecting a 12-digit string'
+	## Main:
+	csum = 0
+	for i in range (0, len (isbn_str), 2):
+		csum += int (isbn_str[i]) + (3 * int (isbn_str[i+1]))
+	cdigit = 10 - (csum % 10)
+	if (cdigit == 10):
+		cdigit = 0
+	## Return:
+	return str (cdigit)
+		
+		
 def isbn10_checksum (isbn_str):
 	"""
 	Return the checksum over the coding (first 9 digits) of an ISBN-10.
@@ -245,38 +386,6 @@ def isbn10_checksum (isbn_str):
 	return str (cdigit)
 
 
-def isbn13_checksum (isbn_str):
-	"""
-	Return the checksum over the coding (first 12 digits) of an ISBN-13.
-	
-	:Parameters:
-		isbn_str : string
-			An ISBN-13 without the trailing checksum digit.
-			
-	:Returns:
-		The checksum character, ``0`` to ``9``.
-		
-	For example:
-	
-		>>> isbn13_checksum ("978094001673")
-		'6'
-		>>> isbn13_checksum ("979123456789")
-		'6'
-	
-	"""
-	## Preconditions & preparation:
-	assert (len (isbn_str) == 12), 'expecting a 12-digit string'
-	## Main:
-	csum = 0
-	for i in range (0, len (isbn_str), 2):
-		csum += int (isbn_str[i]) + (3 * int (isbn_str[i+1]))
-	cdigit = 10 - (csum % 10)
-	if (cdigit == 10):
-		cdigit = 0
-	## Return:
-	return str (cdigit)
-
-
 def sbn_checksum (sbn_str):
 	"""
 	Return the checksum over the coding (first 8 digits) of an SBN.
@@ -301,7 +410,7 @@ def sbn_checksum (sbn_str):
 	return isbn10_checksum ('0' + sbn_str)
 
 
-def validate (isbn_str):
+def validate_isbn (isbn_str):
 	"""
 	Check if a book number is valid, via the trailing checksum digit.
 	
@@ -314,11 +423,11 @@ def validate (isbn_str):
 	
 	For example::
 		
-		>>> validate ("940016737")
+		>>> validate_isbn ("940016737")
 		True
-		>>> validate ("3-8055-7505-X")
+		>>> validate_isbn ("3-8055-7505-X")
 		True
-		>>> validate ("3-8055-7505-3")
+		>>> validate_isbn ("3-8055-7505-3")
 		False
 		
 		
@@ -340,17 +449,4 @@ def validate (isbn_str):
 	return (new_csum == csum)
 
 
-### TEST & DEBUG ###
-
-def _doctest ():
-	import doctest
-	doctest.testmod()
-
-
-### MAIN ###
-
-if __name__ == '__main__':
-	_doctest()
-
-
-### END ######################################################################
+	

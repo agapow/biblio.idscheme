@@ -1,7 +1,14 @@
 History
 =======
 
-v0.2, 2009-02-09
+
+v0.2, 2009-05-13
+----------------
+
+* Added ISSN class and EAN property.
+
+
+v0.1, 2009-02-09
 ----------------
 
 * Initial release.

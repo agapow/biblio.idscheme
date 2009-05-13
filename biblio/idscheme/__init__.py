@@ -15,13 +15,9 @@ __docformat__ = 'restructuredtext en'
 
 ### IMPORTS ###
 
-from isbn import Isbn
-from utils import *
-
-
 ### CONSTANTS & DEFINES ###
 
-__version__ = '0.1'
+__version__ = '0.2'
 
 
 ### IMPLEMENTATION ###

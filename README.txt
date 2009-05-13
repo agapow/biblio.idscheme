@@ -10,8 +10,7 @@ stripping ISBNs, encapsulating these in a simple class.
 Usage
 -----
 
-`biblio.isbn` provides conversion function and an ISBN class, both of which
-are imported into the top level of the package. For example::
+`biblio.isbn` provides functions for converting and checking ISBNs and a class, that encapsulates those. For example::
 
 	>>> from biblio.isbn import isbn10_to_isbn13, isbn13_to_isbn10
 	>>> isbn10_to_isbn13 ("0-940016-73-7")
